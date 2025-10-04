@@ -6,7 +6,7 @@ export default function LoginPrompt() {
   }
 
   return (
-    <div className="w-96 h-96 bg-white flex flex-col items-center justify-center p-6 text-center">
+    <div className="w-96 h-[600px] bg-white flex flex-col items-center justify-center p-6 text-center shadow-lg">
       <div className="bg-linkedin-600 w-16 h-16 rounded-full flex items-center justify-center mb-4">
         <Linkedin className="w-8 h-8 text-white" />
       </div>

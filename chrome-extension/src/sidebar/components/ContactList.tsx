@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Search, Filter, Users } from 'lucide-react'
+import { Search, Users } from 'lucide-react'
 import { Contact } from '@/types'
 import ContactCard from './ContactCard'
 

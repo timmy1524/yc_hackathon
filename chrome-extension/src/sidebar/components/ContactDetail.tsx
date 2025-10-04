@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
-import { ArrowLeft, ExternalLink, Building, Calendar, MessageSquare, Settings, Send } from 'lucide-react'
+import { ArrowLeft, ExternalLink, Calendar, MessageSquare, Settings, Send } from 'lucide-react'
 import { Contact, Conversation, AIAction } from '@/types'
-import { supabase } from '@/lib/supabase'
+// import { supabase } from '@/lib/supabase'
+import { useMockConversations } from '../hooks/useMockConversations'
 import AutoPilotToggle from './AutoPilotToggle'
 import RelationshipSettings from './RelationshipSettings'
 
@@ -14,46 +15,17 @@ interface ContactDetailProps {
 export default function ContactDetail({ contact, onBack, onContactUpdate }: ContactDetailProps) {
   const [conversation, setConversation] = useState<Conversation | null>(null)
   const [aiActions, setAiActions] = useState<AIAction[]>([])
-  const [loading, setLoading] = useState(true)
   const [showSettings, setShowSettings] = useState(false)
+  const { getConversationData } = useMockConversations()
 
   useEffect(() => {
     loadConversationData()
   }, [contact.id])
 
   const loadConversationData = async () => {
-    try {
-      setLoading(true)
-
-      // Load conversation
-      const { data: conversationData } = await supabase
-        .from('conversations')
-        .select('*')
-        .eq('contact_id', contact.id)
-        .eq('processed', true)
-        .order('recorded_at', { ascending: false })
-        .limit(1)
-        .single()
-
-      if (conversationData) {
-        setConversation(conversationData)
-      }
-
-      // Load AI actions
-      const { data: actionsData } = await supabase
-        .from('ai_actions')
-        .select('*')
-        .eq('contact_id', contact.id)
-        .order('created_at', { ascending: false })
-
-      if (actionsData) {
-        setAiActions(actionsData)
-      }
-    } catch (error) {
-      console.error('Error loading conversation data:', error)
-    } finally {
-      setLoading(false)
-    }
+    const { conversation: conversationData, aiActions: actionsData } = await getConversationData(contact.id)
+    setConversation(conversationData)
+    setAiActions(actionsData)
   }
 
   const handleSendConnectionRequest = async () => {
