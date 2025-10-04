@@ -12,17 +12,15 @@ additional_redirect_urls = ["https://localhost:3000"]
 jwt_expiry = 3600
 jwt_secret = "super-secret-jwt-token-with-at-least-32-characters-long"
 enable_signup = true
-enable_confirmations = false
 
 [auth.email]
 enable_signup = true
 double_confirm_changes = true
-enable_confirmations = false
 
 [db]
 port = 54322
 shadow_port = 54320
-major_version = 15
+major_version = 17
 
 [studio]
 enabled = true
@@ -37,11 +35,6 @@ pop3_port = 54326
 [storage]
 enabled = true
 file_size_limit = "50MiB"
-allowed_mime_types = ["audio/webm", "audio/wav", "audio/mp3", "audio/mpeg"]
-
-[edge_functions]
-enabled = true
-port = 54325
 
 [analytics]
 enabled = false
