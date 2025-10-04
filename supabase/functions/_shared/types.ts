@@ -1,46 +1,44 @@
-export interface User {
-  id: string
-  user_name: string
-  user_email: string
-  created_at: string
-  updated_at: string
-}
-
 export interface Contact {
-  id: string
-  user_id: string
-  name: string
-  profile_url: string
-  conversation_summary?: string
-  follow_up_actions?: string[]
-  follow_up_suggestions?: string
-  follow_up_text?: string
-  created_at: string
-  updated_at: string
+  id: string;
+  user_id: string;
+  name: string;
+  linkedin_url: string;
+  linkedin_profile_data: {
+    title?: string;
+    company?: string;
+    location?: string;
+  };
+  relationship_type: 'potential_client' | 'professional_contact' | 'friend' | 'colleague' | 'other';
+  custom_instructions: string | null;
+  auto_pilot_enabled: boolean;
+  status: 'not_contacted' | 'connection_sent' | 'connected' | 'declined';
+  created_at: string;
+  updated_at: string;
 }
 
-export interface UploadRequest {
-  user_name: string
-  user_email: string
-  audio_file: string // base64 encoded audio
-  profile_url: string
-  profile_name: string
+export interface Conversation {
+  id: string;
+  user_id: string;
+  contact_id: string;
+  audio_url: string;
+  transcription: string | null;
+  summary: string | null;
+  key_topics: string[];
+  ai_analysis: {
+    sentiment?: string;
+    action_items?: string[];
+  };
+  duration_seconds: number;
+  recorded_at: string;
+  processed: boolean;
 }
 
-export interface GetContactsRequest {
-  user_name: string
-  user_email: string
-}
-
-export interface ApiResponse<T = any> {
-  status: 'success' | 'error'
-  message: string
-  data?: T
-}
-
-export interface LLMResponse {
-  conversation_summary: string
-  follow_up_actions: string[]
-  follow_up_suggestions: string
-  follow_up_text: string
+export interface LinkedInMessage {
+  id: string;
+  user_id: string;
+  contact_id: string;
+  sender: 'user' | 'contact';
+  message_text: string;
+  ai_generated: boolean;
+  sent_at: string;
 }

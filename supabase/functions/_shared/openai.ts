@@ -1,68 +1,64 @@
-import { LLMResponse } from './types.ts'
+const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY')!
 
-export async function processAudioWithLLM(
-  audioBase64: string,
-  profileName: string,
-  profileUrl: string
-): Promise<LLMResponse> {
-  // For MVP, we'll simulate LLM processing
-  // In production, you would integrate with OpenAI, Anthropic, or another LLM service
-  
-  // Simulate processing delay
-  await new Promise(resolve => setTimeout(resolve, 1000))
-  
-  // Mock LLM response based on the profile information
-  return {
-    conversation_summary: `Had a productive conversation with ${profileName} about potential collaboration opportunities. Discussed project timelines and next steps.`,
-    follow_up_actions: [
-      'send a message',
-      'schedule a call',
-      'share project details'
-    ],
-    follow_up_suggestions: `Follow up with ${profileName} about the project discussion and share relevant materials.`,
-    follow_up_text: `Hi ${profileName}, it was great connecting with you! I'd love to continue our conversation about the project. When would be a good time to schedule a follow-up call?`
+export class OpenAIClient {
+  private apiKey: string
+
+  constructor() {
+    this.apiKey = OPENAI_API_KEY
+  }
+
+  async transcribeAudio(audioUrl: string): Promise<string> {
+    const response = await fetch(audioUrl)
+    const audioBlob = await response.blob()
+    
+    const formData = new FormData()
+    formData.append('file', audioBlob, 'audio.webm')
+    formData.append('model', 'whisper-1')
+
+    const transcriptionResponse = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${this.apiKey}`,
+      },
+      body: formData,
+    })
+
+    const result = await transcriptionResponse.json()
+    return result.text
+  }
+
+  async generateCompletion(prompt: string, maxTokens: number = 1000): Promise<{
+    text: string
+    usage: {
+      prompt_tokens: number
+      completion_tokens: number
+      total_tokens: number
+    }
+  }> {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${this.apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4',
+        messages: [
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        max_tokens: maxTokens,
+        temperature: 0.7,
+      }),
+    })
+
+    const result = await response.json()
+    
+    return {
+      text: result.choices[0].message.content,
+      usage: result.usage
+    }
   }
 }
-
-// Real implementation would look like this:
-/*
-export async function processAudioWithLLM(
-  audioBase64: string,
-  profileName: string,
-  profileUrl: string
-): Promise<LLMResponse> {
-  const openai = new OpenAI({
-    apiKey: Deno.env.get('OPENAI_API_KEY'),
-  })
-
-  // Convert base64 to audio file
-  const audioBuffer = Uint8Array.from(atob(audioBase64), c => c.charCodeAt(0))
-  
-  // Transcribe audio
-  const transcription = await openai.audio.transcriptions.create({
-    file: new File([audioBuffer], 'audio.mp3', { type: 'audio/mpeg' }),
-    model: 'whisper-1',
-  })
-
-  // Process with GPT
-  const completion = await openai.chat.completions.create({
-    model: 'gpt-4',
-    messages: [
-      {
-        role: 'system',
-        content: `You are an AI assistant that analyzes LinkedIn conversation audio. 
-        Extract: conversation summary, follow-up actions, suggestions, and follow-up text.
-        Profile: ${profileName} (${profileUrl})`
-      },
-      {
-        role: 'user',
-        content: `Transcription: ${transcription.text}`
-      }
-    ],
-    temperature: 0.7,
-  })
-
-  const response = completion.choices[0].message.content
-  return JSON.parse(response)
-}
-*/
