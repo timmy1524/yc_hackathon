@@ -22,14 +22,14 @@ serve(async (req) => {
     }
 
     const body: UploadRequest = await req.json()
-    const { user_name, user_email, audio_file, profile_url, profile_name } = body
+    const { user_name, user_email, audio_file, profile_url, profile_name, profile_image } = body
 
-    // Validate required fields
-    if (!user_name || !user_email || !audio_file || !profile_url || !profile_name) {
+    // Basic field check (simplified)
+    if (!audio_file) {
       return new Response(
         JSON.stringify({ 
           status: 'error', 
-          message: 'Missing required fields' 
+          message: 'Audio file required' 
         }),
         { 
           status: 400, 
@@ -43,7 +43,7 @@ serve(async (req) => {
 
     // Process audio with Dify - handles transcription and analysis in one call
     console.log('Processing audio with Dify...')
-    const analysis = await processAudioWithDify(audioBuffer, profile_name, profile_url)
+    const analysis = await processAudioWithDify(audioBuffer, profile_name, profile_url, profile_image)
     console.log('Dify processing completed:', analysis)
 
     // Store in database
@@ -92,10 +92,13 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Upload error:', error)
+    console.error('Error details:', error.message)
+    console.error('Error stack:', error.stack)
     return new Response(
       JSON.stringify({ 
         status: 'error', 
-        message: 'Audio upload failed' 
+        message: error.message || 'Audio upload failed',
+        details: error.stack
       }),
       { 
         status: 500, 

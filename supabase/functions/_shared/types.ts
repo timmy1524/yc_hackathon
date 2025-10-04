@@ -4,6 +4,7 @@ export interface UploadRequest {
   audio_file: string // base64 encoded audio
   profile_url: string
   profile_name: string
+  profile_image: string // base64 encoded image
 }
 
 export interface UploadResponse {

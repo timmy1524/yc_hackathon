@@ -19,16 +19,18 @@
   "user_email": "amber@gmail.com",
   "audio_file": "SUQzAwAAAAAAACxUUzUxLjEwMABUaGUgYXVkaW8gZmlsZSBjb250ZW50IGluIGJhc2U2NCBlbmNvZGVkIGZvcm1hdC4gVGhpcyBpcyBhIHNhbXBsZSBhdWRpbyBmaWxlIHRoYXQgd291bGQgYmUgc2VudCBmcm9tIHRoZSBjbGllbnQgdG8gdGhlIHNlcnZlci4gVGhlIGF1ZGlvIGZpbGUgaXMgZW5jb2RlZCBpbiBiYXNlNjQgZm9ybWF0IGFuZCB3aWxsIGJlIGNvbnZlcnRlZCB0byBNUDMgZm9ybWF0IGZvciBEaWZ5Lg==",
   "profile_url": "https://www.linkedin.com/in/yilun-s/",
-  "profile_name": "Yilun Sun"
+  "profile_name": "Yilun Sun",
+  "profile_image": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
 }
 ```
 
 **Field Descriptions:**
 - `user_name`: Name of the user uploading the audio
 - `user_email`: Email address of the user
-- `audio_file`: Base64 encoded M4A audio file
+- `audio_file`: Base64 encoded AAC audio file (will be converted to MP3 for Dify)
 - `profile_url`: LinkedIn profile URL of the person in the conversation
 - `profile_name`: Name of the person in the conversation
+- `profile_image`: Base64 encoded profile image (JPEG/PNG format)
 
 ### Success Response
 **Status Code:** `200 OK`

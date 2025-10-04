@@ -22,22 +22,8 @@ serve(async (req) => {
 
     // Parse query parameters
     const url = new URL(req.url)
-    const user_name = url.searchParams.get('user_name')
-    const user_email = url.searchParams.get('user_email')
-
-    // Validate required fields
-    if (!user_name || !user_email) {
-      return new Response(
-        JSON.stringify({ 
-          status: 'error', 
-          message: 'Missing required parameters: user_name and user_email' 
-        }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      )
-    }
+    const user_name = url.searchParams.get('user_name') || 'default_user'
+    const user_email = url.searchParams.get('user_email') || 'default@example.com'
 
     // Fetch user's conversations from database
     const { data: conversations, error } = await supabase
