@@ -1,0 +1,41 @@
+{
+  "manifest_version": 3,
+  "name": "LinkedIn AI Assistant",
+  "version": "0.0.1",
+  "description": "AI-powered LinkedIn automation assistant",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "scripting"
+  ],
+  "host_permissions": [
+    "*://www.linkedin.com/*"
+  ],
+  "background": {
+    "service_worker": "src/background/service-worker.ts",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://www.linkedin.com/*"],
+      "js": ["src/content/linkedin.ts"],
+      "run_at": "document_end"
+    }
+  ],
+  "action": {
+    "default_popup": "src/sidebar/index.html",
+    "default_title": "LinkedIn AI Assistant"
+  },
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["src/sidebar/*"],
+      "matches": ["*://www.linkedin.com/*"]
+    }
+  ]
+}
