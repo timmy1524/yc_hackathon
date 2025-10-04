@@ -22,7 +22,11 @@ serve(async (req) => {
     }
 
     const body: UploadRequest = await req.json()
-    const { user_name, user_email, audio_file, profile_url, profile_name, profile_image } = body
+    const { audio_file, profile_url, profile_name, profile_image } = body
+    
+    // Hardcoded user information
+    const user_name = 'Yilun'
+    const user_email = 'yilunsun@gmail.com'
 
     // Basic field check (simplified)
     if (!audio_file) {

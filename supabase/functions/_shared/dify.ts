@@ -35,7 +35,7 @@ export async function processAudioWithDify(audioBuffer: ArrayBuffer, profileName
     console.log('Audio buffer size:', audioBuffer.byteLength)
     console.log('Profile name:', profileName)
     console.log('Profile URL:', profileUrl)
-    console.log('Profile image length:', profileImage.length)
+    console.log('Profile image length:', profileImage ? profileImage.length : 'No image provided')
     
     // Convert AAC to MP3 format for Dify
     const mp3Buffer = await convertAacToMp3(audioBuffer)
@@ -92,22 +92,21 @@ export async function processAudioWithDify(audioBuffer: ArrayBuffer, profileName
 
     // Run Dify workflow - it handles everything in one call
     const workflowInputs: any = {
-      audio_file: [{
+      Audio: {
         transfer_method: 'local_file',
         upload_file_id: fileId,
         type: 'audio'
-      }],
-      profile_name: profileName,
+      },
       profile_url: profileUrl
     }
 
-    // Add profile image if available
+    // Add linkedin_picture only if we have an image
     if (imageFileId) {
-      workflowInputs.profile_image = [{
+      workflowInputs.linkedin_picture = {
         transfer_method: 'local_file',
         upload_file_id: imageFileId,
         type: 'image'
-      }]
+      }
     }
 
     console.log('Executing Dify workflow...')
@@ -137,7 +136,14 @@ export async function processAudioWithDify(audioBuffer: ArrayBuffer, profileName
     
     const workflowResult = await workflowResponse.json()
     console.log('Workflow result:', JSON.stringify(workflowResult, null, 2))
-    const outputs = workflowResult.data.outputs
+    
+    // Check if the response has the expected structure
+    if (!workflowResult.data) {
+      console.error('Workflow result missing data property:', workflowResult)
+      throw new Error('Invalid workflow response structure')
+    }
+    
+    const outputs = workflowResult.data.outputs || {}
     
     // Dify returns everything we need in one response
     return {

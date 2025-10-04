@@ -20,10 +20,9 @@ serve(async (req) => {
       )
     }
 
-    // Parse query parameters
-    const url = new URL(req.url)
-    const user_name = url.searchParams.get('user_name') || 'default_user'
-    const user_email = url.searchParams.get('user_email') || 'default@example.com'
+    // Use hardcoded user information (same as client-upload)
+    const user_name = 'Yilun'
+    const user_email = 'yilunsun@gmail.com'
 
     // Fetch user's conversations from database
     const { data: conversations, error } = await supabase

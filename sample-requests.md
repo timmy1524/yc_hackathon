@@ -70,12 +70,11 @@
 **Endpoint:** `GET https://shktirpoweaqcvvleldo.supabase.co/functions/v1/chrome-get-contacts`
 
 **Query Parameters:**
-- `user_name`: Amber
-- `user_email`: amber@gmail.com
+- No parameters required (uses hardcoded user: Yilun)
 
 **Full URL:**
 ```
-https://shktirpoweaqcvvleldo.supabase.co/functions/v1/chrome-get-contacts?user_name=Amber&user_email=amber@gmail.com
+https://shktirpoweaqcvvleldo.supabase.co/functions/v1/chrome-get-contacts
 ```
 
 ### Success Response
@@ -151,7 +150,7 @@ curl -X POST 'https://shktirpoweaqcvvleldo.supabase.co/functions/v1/client-uploa
 
 ### Test Chrome Get Contacts
 ```bash
-curl -X GET 'https://shktirpoweaqcvvleldo.supabase.co/functions/v1/chrome-get-contacts?user_name=Amber&user_email=amber@gmail.com'
+curl -X GET 'https://shktirpoweaqcvvleldo.supabase.co/functions/v1/chrome-get-contacts'
 ```
 
 ## JavaScript Example
@@ -193,12 +192,8 @@ const fileToBase64 = (file) => {
 
 ### Get Contacts
 ```javascript
-const getContacts = async (userInfo) => {
-  const url = new URL('https://shktirpoweaqcvvleldo.supabase.co/functions/v1/chrome-get-contacts');
-  url.searchParams.append('user_name', userInfo.name);
-  url.searchParams.append('user_email', userInfo.email);
-  
-  const response = await fetch(url);
+const getContacts = async () => {
+  const response = await fetch('https://shktirpoweaqcvvleldo.supabase.co/functions/v1/chrome-get-contacts');
   const result = await response.json();
   return result;
 };
