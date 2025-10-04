@@ -35,30 +35,20 @@ class LinkedInProfileInjector {
   }
 
   private setupNavigationObserver() {
-    // Watch for URL changes in SPA
+    // Watch for URL changes in SPA (single observer to prevent duplicates)
     let lastUrl = location.href
-    new MutationObserver(() => {
+    this.observer = new MutationObserver(() => {
       const currentUrl = location.href
       if (currentUrl !== lastUrl) {
         lastUrl = currentUrl
         if (this.isProfilePage(currentUrl)) {
-          // Wait for profile content to load
+          // Wait for profile content to load, then inject once
           setTimeout(() => this.injectConnectionReason(), 1000)
         }
       }
-    }).observe(document.body, { subtree: true, childList: true })
-
-    // Also observe the main content area for changes
-    this.observer = new MutationObserver(() => {
-      if (this.isProfilePage(window.location.href)) {
-        this.injectConnectionReason()
-      }
     })
 
-    this.observer.observe(document.body, {
-      childList: true,
-      subtree: true
-    })
+    this.observer.observe(document.body, { subtree: true, childList: true })
   }
 
   private isProfilePage(url: string): boolean {
@@ -70,6 +60,27 @@ class LinkedInProfileInjector {
 
     if (!this.isProfilePage(window.location.href)) {
       console.log('[LinkedIn Profile Injector] Not a profile page, skipping')
+      return
+    }
+
+    // Create a unique ID for this profile to avoid duplicate injections
+    const profileId = window.location.pathname
+    if (this.injectedSections.has(profileId)) {
+      console.log('[LinkedIn Profile Injector] Already injected for this profile')
+      return
+    }
+
+    // Check if our section already exists
+    if (document.querySelector('#ai-connection-reason-section')) {
+      console.log('[LinkedIn Profile Injector] Section already exists in DOM')
+      this.injectedSections.add(profileId)
+      return
+    }
+
+    // IMPORTANT: Only proceed if this person is in our contacts database
+    const connectionData = await this.fetchConnectionData()
+    if (!connectionData) {
+      console.log('[LinkedIn Profile Injector] This person is not in contacts database, skipping injection')
       return
     }
 
@@ -96,23 +107,6 @@ class LinkedInProfileInjector {
         Array.from(document.querySelectorAll('main *')).slice(0, 5).map(el => el.className))
       return
     }
-
-    // Create a unique ID for this profile to avoid duplicate injections
-    const profileId = window.location.pathname
-    if (this.injectedSections.has(profileId)) {
-      console.log('[LinkedIn Profile Injector] Already injected for this profile')
-      return
-    }
-
-    // Check if our section already exists
-    if (document.querySelector('#ai-connection-reason-section')) {
-      console.log('[LinkedIn Profile Injector] Section already exists in DOM')
-      this.injectedSections.add(profileId)
-      return
-    }
-
-    // Get connection data from background script or API
-    const connectionData = await this.fetchConnectionData()
 
     // Create all sections
     const sections = [
@@ -185,15 +179,69 @@ class LinkedInProfileInjector {
     return null
   }
 
-  private async fetchConnectionData(): Promise<ConnectionData> {
-    // TODO: Replace with actual API call to get connection data
-    // For now, return mock data
-    return {
-      date_met: "Sep 10/2025",
-      meeting_event: "YC HACKATHON",
-      conversation_summary: "You both are interested in AI and machine learning, particularly in building automation tools for professional networking. You share mutual connections including Bryan Kim and Thorsten Schaeff, who work in similar fields.",
-      follow_up_message: "Mock follow-up message content will be loaded from backend API.",
-      future_potential: "Mock future potential content will be loaded from backend API."
+  private async fetchConnectionData(): Promise<ConnectionData | null> {
+    try {
+      // Get current LinkedIn profile URL
+      const currentProfileUrl = window.location.href
+      
+      // Extract clean LinkedIn profile URL (remove query params and fragments)
+      const cleanUrl = currentProfileUrl.split('?')[0].split('#')[0]
+      
+      console.log('[LinkedIn Profile Injector] Checking for contact with URL:', cleanUrl)
+      
+      // Call the same API that the sidebar uses
+      const SUPABASE_URL = 'https://shktirpoweaqcvvleldo.supabase.co'
+      const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNoa3RpcnBvd2VhcWN2dmxlbGRvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk1OTQ4MzMsImV4cCI6MjA3NTE3MDgzM30.SJDU3hDL4N7jbhT7Kqp6JuNKjIXWAG3nKMoMk5wuz8w'
+      
+      const url = `${SUPABASE_URL}/functions/v1/chrome-get-contacts?user_name=Yilun&user_email=yilunsun@gmail.com`
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json'
+        }
+      })
+
+      if (!response.ok) {
+        console.error('[LinkedIn Profile Injector] API request failed:', response.status, response.statusText)
+        return null
+      }
+
+      const data = await response.json()
+      
+      if (data.status !== 'success') {
+        console.error('[LinkedIn Profile Injector] API returned error:', data.message)
+        return null
+      }
+
+      // Check if current profile URL matches any contact from the API
+      const contact = data.contacts.find((contact: any) => 
+        cleanUrl.includes(contact.profile_url.replace('https://www.linkedin.com', ''))
+      )
+      
+      if (!contact) {
+        console.log('[LinkedIn Profile Injector] No matching contact found in database')
+        return null
+      }
+      
+      console.log('[LinkedIn Profile Injector] Found matching contact:', contact.profile_url)
+      
+      // Return the connection data using API response fields
+      const connectionData = {
+        date_met: contact.date_met,
+        meeting_event: contact.meeting_event,
+        conversation_summary: contact.conversation_summary,
+        follow_up_message: contact.follow_up_suggestion,
+        future_potential: contact.future_potential
+      }
+      
+      console.log('[LinkedIn Profile Injector] Returning connection data:', connectionData)
+      return connectionData
+      
+    } catch (error) {
+      console.error('[LinkedIn Profile Injector] Error fetching connection data:', error)
+      return null
     }
   }
 

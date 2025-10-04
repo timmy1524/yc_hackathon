@@ -1,91 +1,123 @@
 import { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabase'
 import { Contact } from '@/types'
+
+// Supabase configuration
+const SUPABASE_URL = 'https://shktirpoweaqcvvleldo.supabase.co'
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNoa3RpcnBvd2VhcWN2dmxlbGRvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk1OTQ4MzMsImV4cCI6MjA3NTE3MDgzM30.SJDU3hDL4N7jbhT7Kqp6JuNKjIXWAG3nKMoMk5wuz8w'
+
+// API response interface
+interface APIContact {
+  name: string
+  profile_url: string
+  conversation_summary: string
+  follow_up_text: string
+  date_met: string
+  meeting_event: string
+  future_potential: string
+  follow_up_priority: string
+  follow_up_suggestion: string
+}
+
+interface APIResponse {
+  status: string
+  message: string
+  contacts: APIContact[]
+}
+
+// Convert API contact to our Contact interface
+function convertAPIContactToContact(apiContact: APIContact, index: number): Contact {
+  // Fix date parsing - API returns "YYYY-MM-DD", ensure proper parsing
+  const dateMet = new Date(apiContact.date_met + 'T00:00:00.000Z')
+  
+  return {
+    id: (index + 1).toString(),
+    user_id: 'yilun-user-id',
+    name: apiContact.name,
+    linkedin_url: apiContact.profile_url,
+    linkedin_profile_data: {
+      title: '', // Not provided by API
+      company: '', // Not provided by API
+      location: '' // Not provided by API
+    },
+    relationship_type: apiContact.meeting_event || 'professional_contact', // Use meeting_event as relationship_type
+    custom_instructions: apiContact.conversation_summary,
+    auto_pilot_enabled: apiContact.follow_up_priority === 'High',
+    status: 'connected',
+    created_at: dateMet.toISOString(),
+    updated_at: dateMet.toISOString()
+  }
+}
 
 export function useContacts() {
   const [contacts, setContacts] = useState<Contact[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  // Fetch contacts from API on component mount (page refresh)
   useEffect(() => {
-    loadContacts()
-    
-    // Subscribe to real-time changes
-    const subscription = supabase
-      .channel('contacts')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'contacts' },
-        (payload) => {
-          if (payload.eventType === 'INSERT') {
-            setContacts(prev => [payload.new as Contact, ...prev])
-          } else if (payload.eventType === 'UPDATE') {
-            setContacts(prev => prev.map(contact => 
-              contact.id === payload.new.id ? payload.new as Contact : contact
-            ))
-          } else if (payload.eventType === 'DELETE') {
-            setContacts(prev => prev.filter(contact => contact.id !== payload.old.id))
-          }
-        }
-      )
-      .subscribe()
-
-    return () => {
-      subscription.unsubscribe()
-    }
+    fetchContacts()
   }, [])
 
-  const loadContacts = async () => {
+  const fetchContacts = async () => {
     try {
       setLoading(true)
       setError(null)
 
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        setError('Please sign in to view contacts')
-        return
+      const url = `${SUPABASE_URL}/functions/v1/chrome-get-contacts?user_name=Yilun&user_email=yilunsun@gmail.com`
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json'
+        }
+      })
+
+      if (!response.ok) {
+        throw new Error(`API request failed: ${response.status} ${response.statusText}`)
       }
 
-      const { data, error: fetchError } = await supabase
-        .from('contacts')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-
-      if (fetchError) {
-        throw fetchError
+      const data: APIResponse = await response.json()
+      
+      if (data.status !== 'success') {
+        throw new Error(data.message || 'API request failed')
       }
 
-      setContacts(data || [])
+      // Convert API contacts to our Contact interface
+      const convertedContacts = data.contacts.map(convertAPIContactToContact)
+      
+      // Sort by date_met (newest first)
+      const sortedContacts = convertedContacts.sort((a, b) => 
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      )
+
+      setContacts(sortedContacts)
+      console.log('[useContacts] Fetched contacts:', sortedContacts.length)
+      
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load contacts')
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch contacts'
+      setError(errorMessage)
+      console.error('[useContacts] Error fetching contacts:', errorMessage)
     } finally {
       setLoading(false)
     }
   }
 
   const updateContact = async (contactId: string, updates: Partial<Contact>) => {
-    try {
-      const { error } = await supabase
-        .from('contacts')
-        .update(updates)
-        .eq('id', contactId)
+    setContacts(prev => prev.map(contact =>
+      contact.id === contactId ? { ...contact, ...updates } : contact
+    ))
+  }
 
-      if (error) throw error
-
-      // Update local state
-      setContacts(prev => prev.map(contact =>
-        contact.id === contactId ? { ...contact, ...updates } : contact
-      ))
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update contact')
-    }
+  const refetch = async () => {
+    await fetchContacts()
   }
 
   return {
     contacts,
     loading,
     error,
-    refetch: loadContacts,
+    refetch,
     updateContact
   }
 }
