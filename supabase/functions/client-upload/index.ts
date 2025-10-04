@@ -3,6 +3,7 @@ import { supabase } from '../_shared/supabase.ts'
 import { processAudioWithDify } from '../_shared/dify.ts'
 import { corsHeaders } from '../_shared/cors.ts'
 import { UploadRequest, UploadResponse } from '../_shared/types.ts'
+import { sendEmail, createProcessingCompleteEmail } from '../_shared/resend.ts'
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -31,15 +32,56 @@ serve(async (req) => {
     // Basic field check (simplified)
     if (!audio_file) {
       return new Response(
-        JSON.stringify({ 
-          status: 'error', 
-          message: 'Audio file required' 
+        JSON.stringify({
+          status: 'error',
+          message: 'Audio file required'
         }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       )
+    }
+
+    // Send email notification immediately when request is received
+    try {
+      const simpleEmailHtml = `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <style>
+              body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+              .container { max-width: 600px; margin: 20px auto; padding: 20px; background: white; border-radius: 8px; }
+              .header { background: #0a66c2; color: white; padding: 20px; border-radius: 8px 8px 0 0; text-align: center; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="header">
+                <h1>📥 New Upload Received!</h1>
+              </div>
+              <div style="padding: 20px;">
+                <p>A new conversation has been uploaded and is being processed:</p>
+                <ul>
+                  <li><strong>User:</strong> ${user_name || 'Unknown'}</li>
+                  <li><strong>Profile:</strong> ${profile_name || 'Unknown'}</li>
+                  <li><strong>Profile URL:</strong> ${profile_url || 'N/A'}</li>
+                </ul>
+                <p>Processing will begin shortly...</p>
+              </div>
+            </div>
+          </body>
+        </html>
+      `
+
+      await sendEmail({
+        to: 'fyswitch@gmail.com',
+        subject: `📥 New conversation upload from ${user_name || 'Mobile User'}`,
+        html: simpleEmailHtml,
+      })
+      console.log('Email notification sent successfully to: fyswitch@gmail.com')
+    } catch (emailError) {
+      console.error('Failed to send email notification:', emailError)
     }
 
     // Convert base64 audio to ArrayBuffer
@@ -70,13 +112,13 @@ serve(async (req) => {
     if (error) {
       console.error('Database error:', error)
       return new Response(
-        JSON.stringify({ 
-          status: 'error', 
-          message: 'Failed to save conversation data' 
+        JSON.stringify({
+          status: 'error',
+          message: 'Failed to save conversation data'
         }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       )
     }
@@ -88,9 +130,9 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify(response),
-      { 
-        status: 200, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     )
 
