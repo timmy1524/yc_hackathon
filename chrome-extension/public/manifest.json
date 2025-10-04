@@ -18,7 +18,7 @@
   "content_scripts": [
     {
       "matches": ["*://www.linkedin.com/*"],
-      "js": ["src/content/linkedin.ts", "src/content/sidebar-injector.ts"],
+      "js": ["src/content/linkedin.ts", "src/content/sidebar-injector.ts", "src/content/profile-injector.ts"],
       "run_at": "document_end"
     }
   ],
