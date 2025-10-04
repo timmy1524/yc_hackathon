@@ -8,7 +8,7 @@ export interface Contact {
     company?: string;
     location?: string;
   };
-  relationship_type: 'potential_client' | 'professional_contact' | 'friend' | 'colleague' | 'other';
+  relationship_type: string;
   custom_instructions: string | null;
   auto_pilot_enabled: boolean;
   status: 'not_contacted' | 'connection_sent' | 'connected' | 'declined';
