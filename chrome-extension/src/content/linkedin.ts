@@ -91,7 +91,7 @@ class LinkedInContentScript {
   }
 
   private setupMessageListener() {
-    chrome.runtime.onMessage.addListener((message: MessageFromBackground, sender, sendResponse) => {
+    chrome.runtime.onMessage.addListener((message: MessageFromBackground, _sender, sendResponse) => {
       switch (message.type) {
         case 'SEND_REPLY':
           this.sendLinkedInMessage(message.data.message)

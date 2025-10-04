@@ -33,7 +33,7 @@ export default function ContactCard({ contact, onClick }: ContactCardProps) {
       case 'declined':
         return 'DECLINED'
       default:
-        return status.toUpperCase()
+        return 'UNKNOWN'
     }
   }
 

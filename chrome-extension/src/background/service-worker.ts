@@ -4,11 +4,22 @@ import { MessageFromContent, MessageData } from '@/types'
 class BackgroundService {
   constructor() {
     this.setupMessageListener()
+    this.setupActionListener()
     console.log('LinkedIn AI Assistant: Background service worker initialized')
   }
 
+  private setupActionListener() {
+    // Handle extension icon clicks
+    chrome.action.onClicked.addListener((tab) => {
+      if (tab.url?.includes('linkedin.com')) {
+        // Send message to content script to toggle sidebar
+        chrome.tabs.sendMessage(tab.id!, { action: 'toggleSidebar' })
+      }
+    })
+  }
+
   private setupMessageListener() {
-    chrome.runtime.onMessage.addListener((message: MessageFromContent, sender, sendResponse) => {
+    chrome.runtime.onMessage.addListener((message: MessageFromContent, _sender, _sendResponse) => {
       switch (message.type) {
         case 'NEW_MESSAGE':
           this.handleNewLinkedInMessage(message.data)
@@ -154,4 +165,4 @@ class BackgroundService {
 new BackgroundService()
 
 // Export for use by popup
-self.backgroundService = BackgroundService
+;(self as any).backgroundService = BackgroundService
