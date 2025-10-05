@@ -1,11 +1,13 @@
 # LinkedIn AI Assistant - Backend API
 
 ## Overview
+
 This backend provides two main endpoints for processing audio conversations and managing LinkedIn contacts with AI insights.
 
 ## Database Schema
 
 ### `conversations` Table
+
 ```sql
 CREATE TABLE conversations (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -28,13 +30,15 @@ CREATE TABLE conversations (
 ## API Endpoints
 
 ### 1. Upload Audio and Process Conversation
+
 **Endpoint:** `POST /functions/v1/client-upload`
 
 **Request Body:**
+
 ```json
 {
-  "user_name": "Amber",
-  "user_email": "amber@gmail.com", 
+  "user_name": "Yilun Sun",
+  "user_email": "yilunsun@gmail.com",
   "audio_file": "base64_encoded_audio_data",
   "profile_url": "https://www.linkedin.com/in/jason",
   "profile_name": "Jason"
@@ -42,6 +46,7 @@ CREATE TABLE conversations (
 ```
 
 **Response:**
+
 ```json
 {
   "status": "success",
@@ -50,23 +55,27 @@ CREATE TABLE conversations (
 ```
 
 **Error Response:**
+
 ```json
 {
-  "status": "error", 
+  "status": "error",
   "message": "Audio upload failed"
 }
 ```
 
 ### 2. Get User's Contacts with AI Insights
+
 **Endpoint:** `GET /functions/v1/chrome-get-contacts`
 
 **Query Parameters:**
+
 - `user_name`: User's name
 - `user_email`: User's email
 
 **Example:** `/functions/v1/chrome-get-contacts?user_name=Amber&user_email=amber@gmail.com`
 
 **Response:**
+
 ```json
 {
   "status": "success",
@@ -88,6 +97,7 @@ CREATE TABLE conversations (
 ```
 
 **Error Response:**
+
 ```json
 {
   "status": "error",
@@ -115,6 +125,7 @@ CREATE TABLE conversations (
 ## Dify Integration
 
 The backend uses Dify workflows for AI processing:
+
 - **Base URL**: `http://20.119.99.119/v1`
 - **API Key**: `app-DvILfF25wV9hGW0MzLtkVOdr`
 - **Workflow**: Handles both audio transcription and conversation analysis
@@ -122,6 +133,7 @@ The backend uses Dify workflows for AI processing:
 ## Deployment
 
 The functions are deployed to Supabase Edge Functions and can be accessed at:
+
 - `https://shktirpoweaqcvvleldo.supabase.co/functions/v1/client-upload`
 - `https://shktirpoweaqcvvleldo.supabase.co/functions/v1/chrome-get-contacts`
 
