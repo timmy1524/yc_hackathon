@@ -1,5 +1,5 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { supabase } from '../_shared/supabase.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { processAudioWithDify } from '../_shared/dify.ts'
 import { corsHeaders } from '../_shared/cors.ts'
 import { UploadRequest, UploadResponse } from '../_shared/types.ts'
@@ -22,12 +22,46 @@ serve(async (req) => {
       )
     }
 
+    // Create authenticated Supabase client
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      {
+        global: {
+          headers: { Authorization: req.headers.get('Authorization')! },
+        },
+      }
+    )
+
+    // Get the authenticated user
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    
+    if (userError || !user) {
+      return new Response(
+        JSON.stringify({ 
+          status: 'error', 
+          message: 'Authentication required. Please provide a valid authorization token.' 
+        }),
+        { 
+          status: 401, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
+
+    // Get user profile for display name
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('display_name, first_name, last_name')
+      .eq('id', user.id)
+      .single()
+
     const body: UploadRequest = await req.json()
     const { audio_file, profile_url, profile_name, profile_image } = body
     
-    // Hardcoded user information
-    const user_name = 'Yilun'
-    const user_email = 'yilunsun@gmail.com'
+    // Use authenticated user information
+    const user_name = profile?.display_name || profile?.first_name || user.email?.split('@')[0] || 'User'
+    const user_email = user.email || ''
 
     // Basic field check (simplified)
     if (!audio_file) {
@@ -54,12 +88,11 @@ serve(async (req) => {
     const analysis = await processAudioWithDify(audioBuffer, profile_name, profile_url, profile_image)
     console.log('Dify processing completed:', analysis)
 
-    // Store in database
+    // Store in database using the new user_id structure
     const { error } = await supabase
       .from('conversations')
       .insert({
-        user_name,
-        user_email,
+        user_id: user.id,
         profile_name,
         profile_url,
         conversation_summary: analysis.conversation_summary,
